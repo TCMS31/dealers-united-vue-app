@@ -1,0 +1,53 @@
+{
+  "name": "time-capsule-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Vue 3 client for the Time Capsule API: write a note, seal it, and read it when its opening time passes.",
+  "scripts": {
+    "serve": "vue-cli-service serve",
+    "serve:demo": "cross-env VUE_APP_DEMO=true vue-cli-service serve",
+    "build": "vue-cli-service build",
+    "build:demo": "cross-env VUE_APP_DEMO=true vue-cli-service build",
+    "lint": "vue-cli-service lint",
+    "lint:check": "vue-cli-service lint --no-fix",
+    "format": "prettier --write \"src/**/*.{js,vue,css}\" \"tests/**/*.js\"",
+    "format:check": "prettier --check \"src/**/*.{js,vue,css}\" \"tests/**/*.js\"",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "axios": "^1.6.7",
+    "core-js": "^3.8.3",
+    "vue": "^3.2.13",
+    "vue-cookies": "^1.8.3",
+    "vue-router": "^4.3.0",
+    "vuex": "^4.1.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.12.16",
+    "@babel/eslint-parser": "^7.12.16",
+    "@vitejs/plugin-vue": "^5.0.4",
+    "@vitest/coverage-v8": "^1.6.1",
+    "@vue/cli-plugin-babel": "~5.0.0",
+    "@vue/cli-plugin-eslint": "~5.0.0",
+    "@vue/cli-service": "~5.0.0",
+    "@vue/test-utils": "^2.4.5",
+    "autoprefixer": "^10.4.17",
+    "cross-env": "^7.0.3",
+    "eslint": "^7.32.0",
+    "eslint-config-prettier": "^8.10.0",
+    "eslint-plugin-vue": "^8.0.3",
+    "happy-dom": "^14.7.1",
+    "postcss": "^8.4.35",
+    "prettier": "^3.2.5",
+    "tailwindcss": "^3.4.1",
+    "vitest": "^1.6.0"
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead",
+    "not ie 11"
+  ]
+}
