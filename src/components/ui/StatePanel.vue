@@ -16,8 +16,10 @@
       </slot>
     </div>
 
-    <h3 class="mt-4 text-base font-semibold text-slate-900">{{ title }}</h3>
-    <p v-if="description" class="mt-1.5 max-w-sm text-sm text-slate-500">
+    <component :is="headingTag" class="mt-4 font-display text-lg font-semibold text-stone-900">
+      {{ title }}
+    </component>
+    <p v-if="description" class="mt-1.5 max-w-sm text-sm text-stone-500">
       {{ description }}
     </p>
 
@@ -29,9 +31,10 @@
 
 <script>
 const TONES = {
-  neutral: "bg-slate-100 text-slate-500",
+  neutral: "bg-stone-100 text-stone-500",
   error: "bg-rose-100 text-rose-600",
   brand: "bg-brand-100 text-brand-600",
+  seal: "bg-seal-100 text-seal-600",
 };
 
 export default {
@@ -39,6 +42,12 @@ export default {
 
   props: {
     title: { type: String, required: true },
+    /** The panel sits under the page's h1 unless it is the page's only heading. */
+    headingTag: {
+      type: String,
+      default: "h2",
+      validator: (value) => ["h1", "h2", "h3"].includes(value),
+    },
     description: { type: String, default: "" },
     variant: {
       type: String,

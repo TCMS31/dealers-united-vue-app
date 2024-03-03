@@ -1,7 +1,8 @@
 <template>
-  <div class="flex min-h-screen items-center justify-center bg-slate-50 px-4">
+  <main id="main" class="flex min-h-screen items-center justify-center px-4">
     <div class="surface w-full max-w-md">
       <StatePanel
+        heading-tag="h1"
         title="Page not found"
         description="That link does not lead anywhere in this app."
       >
@@ -10,7 +11,7 @@
         </template>
       </StatePanel>
     </div>
-  </div>
+  </main>
 </template>
 
 <script>

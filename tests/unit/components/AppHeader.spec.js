@@ -46,6 +46,13 @@ describe("AppHeader", () => {
     expect(push).toHaveBeenCalledWith({ name: "login" });
   });
 
+  it("starts with a skip link to the page's main landmark", () => {
+    const { wrapper } = mountView(AppHeader, { store });
+    const first = wrapper.findAll("a")[0];
+    expect(first.attributes("href")).toBe("#main");
+    expect(first.text()).toBe("Skip to content");
+  });
+
   it("offers no log-out control to a signed-out visitor", () => {
     session.clear();
     const anonymous = createAppStore({ api: makeApi() });

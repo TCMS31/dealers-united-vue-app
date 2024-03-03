@@ -2,7 +2,7 @@
   <div>
     <label :for="id" class="field-label">
       {{ label }}
-      <span v-if="!required" class="font-normal text-slate-400">(optional)</span>
+      <span v-if="!required" class="font-normal text-stone-500">(optional)</span>
     </label>
 
     <slot :id="id" :invalid="Boolean(error)" :described-by="error ? errorId : undefined" />
@@ -10,7 +10,7 @@
     <p v-if="error" :id="errorId" class="mt-1.5 text-xs text-rose-600" role="alert">
       {{ error }}
     </p>
-    <p v-else-if="hint" class="mt-1.5 text-xs text-slate-500">{{ hint }}</p>
+    <p v-else-if="hint" class="mt-1.5 text-xs text-stone-500">{{ hint }}</p>
   </div>
 </template>
 

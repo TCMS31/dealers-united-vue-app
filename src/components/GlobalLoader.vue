@@ -7,7 +7,7 @@
   >
     <div
       v-if="isLoading"
-      class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/20 backdrop-blur-[1px]"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/20 backdrop-blur-[1px]"
       role="status"
       aria-live="polite"
       aria-label="Loading"
@@ -17,7 +17,7 @@
           class="h-4 w-4 animate-spin rounded-full border-2 border-brand-200 border-t-brand-600"
           aria-hidden="true"
         />
-        <span class="text-sm font-medium text-slate-600">Working…</span>
+        <span class="text-sm font-medium text-stone-600">Working…</span>
       </div>
     </div>
   </transition>

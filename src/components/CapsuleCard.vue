@@ -1,6 +1,9 @@
 <template>
   <article
-    class="surface flex h-full flex-col gap-4 p-5 transition hover:shadow-md"
+    :class="[
+      'surface flex h-full flex-col gap-4 border-l-4 p-5 transition hover:shadow-md',
+      accentBorder,
+    ]"
     :aria-label="`Capsule scheduled for ${scheduledLabel}`"
   >
     <header class="flex items-start justify-between gap-3">
@@ -15,7 +18,7 @@
       </span>
 
       <time
-        class="shrink-0 text-xs tabular-nums text-slate-500"
+        class="shrink-0 text-xs tabular-nums text-stone-500"
         :datetime="capsule.scheduled_opening_time"
       >
         {{ scheduledLabel }}
@@ -25,21 +28,23 @@
     <p
       :class="[
         'flex-1 text-sm leading-relaxed',
-        capsule.is_opened ? 'text-slate-800' : 'select-none font-mono text-slate-400',
+        capsule.is_opened
+          ? 'text-stone-800'
+          : 'select-none font-mono tracking-wider text-stone-500',
       ]"
     >
       {{ capsule.note }}
     </p>
 
-    <footer class="flex items-center justify-between gap-3 border-t border-slate-100 pt-4">
-      <div v-if="!capsule.is_opened && !isUnlocked" class="text-xs text-slate-500">
+    <footer class="flex items-center justify-between gap-3 border-t border-stone-100 pt-4">
+      <div v-if="!capsule.is_opened && !isUnlocked" class="text-xs text-stone-500">
         <span class="block">Unlocks in</span>
-        <span class="font-mono text-sm tabular-nums text-slate-700">{{ countdown }}</span>
+        <span class="font-mono text-sm tabular-nums text-stone-700">{{ countdown }}</span>
       </div>
-      <div v-else-if="capsule.is_opened" class="text-xs text-slate-500">
+      <div v-else-if="capsule.is_opened" class="text-xs text-stone-500">
         Opened — the full note is shown above.
       </div>
-      <div v-else class="text-xs font-medium text-emerald-700">The wait is over.</div>
+      <div v-else class="text-xs font-medium text-brand-700">The wait is over.</div>
 
       <AppButton
         v-if="!capsule.is_opened"
@@ -99,9 +104,14 @@ export default {
       return this.isUnlocked ? "Ready to open" : "Sealed";
     },
 
+    accentBorder() {
+      if (this.capsule.is_opened) return "border-l-stone-300";
+      return this.isUnlocked ? "border-l-brand-500" : "border-l-seal-500";
+    },
+
     statusTone() {
-      if (this.capsule.is_opened) return "bg-slate-100 text-slate-600";
-      return this.isUnlocked ? "bg-emerald-100 text-emerald-700" : "bg-brand-50 text-brand-700";
+      if (this.capsule.is_opened) return "bg-stone-100 text-stone-700";
+      return this.isUnlocked ? "bg-brand-100 text-brand-800" : "bg-seal-50 text-seal-700";
     },
   },
 };

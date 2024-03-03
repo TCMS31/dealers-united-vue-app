@@ -21,8 +21,8 @@ const VARIANTS = {
   primary:
     "bg-brand-600 text-white shadow-sm hover:bg-brand-700 active:bg-brand-800 disabled:bg-brand-300",
   secondary:
-    "border border-slate-300 bg-white text-slate-700 shadow-sm hover:bg-slate-50 active:bg-slate-100 disabled:text-slate-400",
-  ghost: "text-slate-600 hover:bg-slate-100 hover:text-slate-900 disabled:text-slate-400",
+    "border border-stone-300 bg-white text-stone-700 shadow-sm hover:bg-stone-50 active:bg-stone-100 disabled:text-stone-400",
+  ghost: "text-stone-600 hover:bg-stone-100 hover:text-stone-900 disabled:text-stone-400",
   danger:
     "border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 active:bg-rose-200 disabled:text-rose-300",
 };

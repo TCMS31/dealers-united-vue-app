@@ -1,12 +1,18 @@
 <template>
-  <header class="sticky top-0 z-40 border-b border-slate-200 bg-white/90 backdrop-blur">
+  <a
+    href="#main"
+    class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-3 focus:z-50 focus:rounded-md focus:bg-white focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus:shadow"
+  >
+    Skip to content
+  </a>
+  <header class="sticky top-0 z-40 border-b border-stone-200 bg-paper/90 backdrop-blur">
     <div class="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
       <router-link
         :to="{ name: 'capsules' }"
-        class="flex items-center gap-2.5 rounded-md text-slate-900"
+        class="flex items-center gap-2.5 rounded-md text-stone-900"
       >
         <span
-          class="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 text-white"
+          class="flex h-8 w-8 items-center justify-center rounded-full bg-seal-600 text-seal-50 shadow-inner"
           aria-hidden="true"
         >
           <svg
@@ -20,13 +26,13 @@
             <path stroke-linecap="round" d="M12 7v5l3 2" />
           </svg>
         </span>
-        <span class="text-base font-semibold tracking-tight">Time Capsule</span>
+        <span class="font-display text-lg font-semibold tracking-tight">Time Capsule</span>
       </router-link>
 
       <div class="flex items-center gap-3">
         <span
           v-if="demoMode"
-          class="hidden rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-800 sm:inline"
+          class="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-900"
         >
           Demo data
         </span>
@@ -34,7 +40,7 @@
         <div v-if="isAuthenticated" class="flex items-center gap-3">
           <span
             v-if="user"
-            class="hidden h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-600 sm:flex"
+            class="hidden h-8 w-8 items-center justify-center rounded-full bg-brand-100 text-xs font-semibold text-brand-800 sm:flex"
             :title="displayName"
           >
             {{ initials }}

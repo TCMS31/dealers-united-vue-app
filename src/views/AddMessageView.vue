@@ -1,11 +1,11 @@
 <template>
-  <div class="min-h-screen bg-slate-50">
+  <div class="min-h-screen">
     <AppHeader />
 
-    <main class="mx-auto max-w-2xl px-4 py-8 sm:px-6 sm:py-10">
+    <main id="main" class="mx-auto max-w-2xl px-4 py-8 sm:px-6 sm:py-10">
       <router-link
         :to="{ name: 'capsules' }"
-        class="inline-flex items-center gap-1.5 rounded text-sm font-medium text-slate-500 hover:text-slate-800"
+        class="inline-flex items-center gap-1.5 rounded text-sm font-medium text-stone-500 hover:text-stone-800"
       >
         <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
           <path
@@ -17,8 +17,8 @@
         Back to capsules
       </router-link>
 
-      <h1 class="mt-4 text-2xl font-semibold tracking-tight text-slate-900">Seal a new capsule</h1>
-      <p class="mt-1 text-sm text-slate-500">
+      <h1 class="page-title mt-4">Seal a new capsule</h1>
+      <p class="mt-1 text-sm text-stone-500">
         Once sealed, the note is masked until the opening time you pick.
       </p>
 
@@ -65,7 +65,7 @@
         </FormField>
 
         <div
-          class="flex flex-col-reverse gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:justify-end"
+          class="flex flex-col-reverse gap-3 border-t border-stone-100 pt-5 sm:flex-row sm:justify-end"
         >
           <AppButton tag="router-link" variant="secondary" :to="{ name: 'capsules' }">
             Cancel

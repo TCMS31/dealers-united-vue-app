@@ -45,6 +45,9 @@ describe("MessageListView", () => {
     await flushPromises();
 
     expect(wrapper.findAllComponents({ name: "CapsuleCardSkeleton" }).length).toBeGreaterThan(0);
+    // The skeletons are aria-hidden, so screen readers get a status line instead.
+    expect(wrapper.get('[role="status"]').text()).toBe("Loading your capsules");
+    expect(wrapper.get('section[aria-label="Capsules"]').attributes("aria-busy")).toBe("true");
     wrapper.unmount();
   });
 

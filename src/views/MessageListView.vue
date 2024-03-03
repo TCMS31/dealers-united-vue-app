@@ -1,12 +1,12 @@
 <template>
-  <div class="min-h-screen bg-slate-50">
+  <div class="min-h-screen">
     <AppHeader />
 
-    <main class="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-10">
+    <main id="main" class="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-10">
       <div class="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 class="text-2xl font-semibold tracking-tight text-slate-900">Your capsules</h1>
-          <p class="mt-1 text-sm text-slate-500">
+          <h1 class="page-title">Your capsules</h1>
+          <p class="mt-1 text-sm text-stone-500">
             Sealed notes stay masked until their opening time passes.
           </p>
         </div>
@@ -23,8 +23,10 @@
 
       <dl v-if="total > 0" class="mt-6 grid grid-cols-3 gap-3 sm:max-w-md">
         <div v-for="stat in stats" :key="stat.label" class="surface px-4 py-3">
-          <dt class="text-xs font-medium text-slate-500">{{ stat.label }}</dt>
-          <dd class="mt-0.5 text-xl font-semibold tabular-nums text-slate-900">
+          <dt class="text-xs font-medium uppercase tracking-wide text-stone-500">
+            {{ stat.label }}
+          </dt>
+          <dd :class="['mt-0.5 font-display text-2xl font-semibold tabular-nums', stat.tone]">
             {{ stat.value }}
           </dd>
         </div>
@@ -32,8 +34,9 @@
 
       <AlertBanner v-if="openError" class="mt-6" :message="openError" />
 
-      <section class="mt-6">
-        <div v-if="isLoading" class="grid gap-4 sm:grid-cols-2">
+      <section class="mt-6" aria-label="Capsules" :aria-busy="isLoading ? 'true' : 'false'">
+        <div v-if="isLoading" class="grid gap-4 sm:grid-cols-2" role="status">
+          <span class="sr-only">Loading your capsules</span>
           <CapsuleCardSkeleton v-for="n in 4" :key="n" />
         </div>
 
@@ -47,7 +50,7 @@
 
         <div v-else-if="isEmpty" class="surface">
           <StatePanel
-            variant="brand"
+            variant="seal"
             title="Nothing sealed yet"
             description="Write a note to your future self and pick the moment it unlocks."
           >
@@ -134,9 +137,9 @@ export default {
 
     stats() {
       return [
-        { label: "Total", value: this.total },
-        { label: "Sealed", value: this.lockedCount },
-        { label: "Opened", value: this.openedCount },
+        { label: "Total", value: this.total, tone: "text-stone-900" },
+        { label: "Sealed", value: this.lockedCount, tone: "text-seal-700" },
+        { label: "Opened", value: this.openedCount, tone: "text-brand-700" },
       ];
     },
   },
