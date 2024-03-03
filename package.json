@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "description": "Vue 3 client for the Time Capsule API: write a note, seal it, and read it when its opening time passes.",
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "scripts": {
     "dev": "vite",
     "dev:demo": "cross-env VITE_DEMO=true vite",
@@ -18,27 +21,27 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "axios": "^1.6.7",
-    "vue": "^3.4.21",
-    "vue-cookies": "^1.8.3",
-    "vue-router": "^4.3.0",
+    "axios": "^1.21.0",
+    "vue": "^3.5.45",
+    "vue-cookies": "^1.8.6",
+    "vue-router": "^4.6.4",
     "vuex": "^4.1.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@vitejs/plugin-vue": "^6.0.10",
     "@vitest/coverage-v8": "^5.1.0",
-    "@vue/test-utils": "^2.4.5",
-    "autoprefixer": "^10.4.17",
+    "@vue/test-utils": "^2.5.1",
+    "autoprefixer": "^10.6.2",
     "cross-env": "^10.1.0",
     "eslint": "^10.14.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-vue": "^10.12.0",
     "globals": "^17.14.0",
     "happy-dom": "^21.0.4",
-    "postcss": "^8.4.35",
-    "prettier": "^3.2.5",
-    "tailwindcss": "^3.4.1",
+    "postcss": "^8.5.32",
+    "prettier": "^3.9.10",
+    "tailwindcss": "^3.4.19",
     "vite": "^8.3.6",
     "vitest": "^5.1.0"
   },
