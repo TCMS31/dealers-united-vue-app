@@ -1,13 +1,11 @@
 /**
  * Date/time helpers.
  *
- * The Laravel backend serialises `scheduled_opening_time` straight off the
- * `datetime` column, so it arrives as a *naive* string ("2024-03-01 12:00:00")
- * with no offset. Laravel's default `APP_TIMEZONE` is UTC, so naive values are
- * interpreted as UTC here. `new Date("2024-03-01 12:00:00")` is not specified by
- * ECMAScript and has historically returned Invalid Date in Safari, which is why
- * this module normalises the string instead of handing it to the Date
- * constructor directly.
+ * The API sends `scheduled_opening_time` as ISO-8601 with an explicit `Z`.
+ * Older backend builds sent a naive "2024-03-01 12:00:00" in UTC instead, and
+ * `new Date()` is unspecified for that form (Safari returned Invalid Date), so
+ * naive strings are normalised to UTC here rather than handed to the Date
+ * constructor.
  */
 
 const NAIVE_DATETIME = /^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2}(?::\d{2})?)(\.\d+)?$/;

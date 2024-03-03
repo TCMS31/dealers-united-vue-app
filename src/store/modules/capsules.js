@@ -133,14 +133,7 @@ export default function createCapsulesModule({ api, pageSize = PAGE_SIZE }) {
         commit("ui/startRequest", null, { root: true });
         try {
           const created = await api.createCapsule(userId, payload);
-          // The create endpoint returns the raw model, so the note comes back
-          // unmasked. Mask it locally to match what the list endpoint sends.
-          commit("upsert", {
-            ...created,
-            note: created.is_opened
-              ? created.note
-              : `${String(created.note ?? "").slice(0, 4)}****`,
-          });
+          commit("upsert", created);
           return created;
         } catch (error) {
           throw normaliseError(error);

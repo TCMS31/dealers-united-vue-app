@@ -38,6 +38,17 @@ describe("api client", () => {
     expect(transport.post).toHaveBeenCalledWith("users/7/message-capsules", payload);
   });
 
+  it("unwraps the created capsule from its resource envelope", async () => {
+    // Regression: the created capsule was returned still wrapped in `data`, so
+    // the store's upsert saw no `id` and silently dropped it.
+    transport.post.mockResolvedValue({ data: { id: 9, note: "hell****", is_opened: false } });
+    await expect(api.createCapsule(7, { note: "hello" })).resolves.toEqual({
+      id: 9,
+      note: "hell****",
+      is_opened: false,
+    });
+  });
+
   it("opens a capsule with the un-spaced URL", async () => {
     // Regression: the original store built "message-capsules " with a trailing
     // space, which the API answered with a 404.

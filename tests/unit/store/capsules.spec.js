@@ -125,6 +125,29 @@ describe("capsules module", () => {
     expect(created.is_opened).toBe(false);
   });
 
+  it("inserts a created capsule that arrives in a `data` envelope", async () => {
+    const created = {
+      id: 55,
+      note: "Pric****",
+      scheduled_opening_time: "2099-03-01T09:00:00Z",
+      is_opened: false,
+    };
+    const api = {
+      listCapsules: vi.fn().mockResolvedValue([]),
+      createCapsule: createApiClient({ post: vi.fn().mockResolvedValue({ data: created }) })
+        .createCapsule,
+    };
+    const store = createAppStore({ api });
+    await store.dispatch("capsules/fetchAll");
+
+    await store.dispatch("capsules/create", {
+      note: "Pricing review",
+      scheduled_opening_time: created.scheduled_opening_time,
+    });
+
+    expect(store.state.capsules.items).toEqual([created]);
+  });
+
   it("rejects an invalid create with per-field messages", async () => {
     const { store } = makeStore();
 

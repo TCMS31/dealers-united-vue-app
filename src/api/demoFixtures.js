@@ -1,10 +1,5 @@
 import { MS_PER_DAY, MS_PER_HOUR, MS_PER_MINUTE } from "@/lib/datetime";
 
-/** Serialise a Date the way the Laravel backend does: naive UTC, no offset. */
-function asServerDateTime(date) {
-  return date.toISOString().slice(0, 19).replace("T", " ");
-}
-
 export const DEMO_USER = {
   id: 7,
   name: "Dana Ruiz",
@@ -20,7 +15,7 @@ export const DEMO_USER = {
  * @returns {Array<{id:number,note:string,scheduled_opening_time:string,is_opened:boolean}>}
  */
 export function seedCapsules(now = Date.now()) {
-  const at = (offsetMs) => asServerDateTime(new Date(now + offsetMs));
+  const at = (offsetMs) => new Date(now + offsetMs).toISOString();
 
   return [
     {
@@ -67,5 +62,3 @@ export function seedCapsules(now = Date.now()) {
     },
   ];
 }
-
-export { asServerDateTime };

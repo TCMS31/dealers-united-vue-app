@@ -72,10 +72,11 @@ export function createApiClient(transport) {
     /**
      * @param {string|number} userId
      * @param {{note:string, scheduled_opening_time:string}} payload
-     * @returns {Promise<object>} the created capsule
+     * @returns {Promise<object>} the created capsule, unwrapped from `data`
      */
-    createCapsule(userId, payload) {
-      return transport.post(capsulesPath(userId), payload);
+    async createCapsule(userId, payload) {
+      const body = await transport.post(capsulesPath(userId), payload);
+      return body?.data ?? body;
     },
 
     /**

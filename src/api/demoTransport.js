@@ -1,5 +1,6 @@
 import ApiError from "./ApiError";
-import { DEMO_USER, asServerDateTime, seedCapsules } from "./demoFixtures";
+import { parseServerDate } from "@/lib/datetime";
+import { DEMO_USER, seedCapsules } from "./demoFixtures";
 
 /**
  * An in-memory stand-in for the Laravel API.
@@ -21,6 +22,8 @@ function toResource(capsule) {
     is_opened: capsule.is_opened,
   };
 }
+
+const openingTime = (capsule) => parseServerDate(capsule.scheduled_opening_time)?.getTime() ?? 0;
 
 const CAPSULE_COLLECTION = /^users\/(\d+)\/message-capsules$/;
 const CAPSULE_OPEN = /^users\/(\d+)\/message-capsules\/(\d+)\/open$/;
@@ -61,9 +64,7 @@ export function createDemoTransport({ latencyMs = 220, capsules = null } = {}) {
         return settle(DEMO_USER);
       }
       if (CAPSULE_COLLECTION.test(route)) {
-        const sorted = [...store].sort(
-          (a, b) => new Date(b.scheduled_opening_time) - new Date(a.scheduled_opening_time)
-        );
+        const sorted = [...store].sort((a, b) => openingTime(b) - openingTime(a));
         return settle({ data: sorted.map(toResource) });
       }
       return fail("Not found.", 404);
@@ -105,11 +106,11 @@ export function createDemoTransport({ latencyMs = 220, capsules = null } = {}) {
         const created = {
           id: nextId++,
           note: String(body.note),
-          scheduled_opening_time: asServerDateTime(scheduled),
+          scheduled_opening_time: scheduled.toISOString(),
           is_opened: false,
         };
         store = [created, ...store];
-        return settle(created);
+        return settle({ data: toResource(created) });
       }
 
       return fail("Not found.", 404);
@@ -121,12 +122,12 @@ export function createDemoTransport({ latencyMs = 220, capsules = null } = {}) {
 
       const capsule = store.find((c) => c.id === Number(match[2]));
       if (!capsule) return fail("We could not find what you were looking for.", 404);
-      if (new Date(capsule.scheduled_opening_time).getTime() > Date.now()) {
+      if (openingTime(capsule) > Date.now()) {
         return fail("Message capsule cannot be opened - time remaining!", 403);
       }
 
       capsule.is_opened = true;
-      return settle(toResource(capsule));
+      return settle({ data: toResource(capsule) });
     },
 
     /** Test helper: restore the initial fixture set. */
