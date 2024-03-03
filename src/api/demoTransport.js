@@ -8,7 +8,7 @@ import { DEMO_USER, seedCapsules } from "./demoFixtures";
  * It implements the same `{ get, post, put }` transport interface as
  * {@link module:api/httpTransport}, which is the extension seam of this app:
  * anything that speaks that interface can back the data layer. Demo mode
- * (`VUE_APP_DEMO=true`) uses it so the UI can be run, reviewed and
+ * (`VITE_DEMO=true`) uses it so the UI can be run, reviewed and
  * screenshotted without a backend, and the unit tests use it to exercise the
  * store end-to-end without touching the network.
  */

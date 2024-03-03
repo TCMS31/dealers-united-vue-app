@@ -2,11 +2,6 @@ import { fileURLToPath, URL } from "node:url";
 import { defineConfig } from "vitest/config";
 import vue from "@vitejs/plugin-vue";
 
-/**
- * Vitest runs the unit suite. The application itself is still built by Vue CLI
- * (webpack); Vitest only needs its own transform pipeline for `.vue` files and
- * the same `@/` alias the app uses.
- */
 export default defineConfig({
   plugins: [vue()],
 
@@ -16,12 +11,16 @@ export default defineConfig({
     },
   },
 
+  server: { port: 8080 },
+  preview: { port: 8080 },
+
   test: {
     environment: "happy-dom",
     globals: true,
     include: ["tests/**/*.spec.js"],
     setupFiles: ["tests/setup.js"],
     restoreMocks: true,
+    unstubGlobals: true,
     coverage: {
       provider: "v8",
       include: ["src/**/*.{js,vue}"],

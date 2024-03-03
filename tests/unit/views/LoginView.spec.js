@@ -66,7 +66,9 @@ describe("LoginView", () => {
     api.login.mockRejectedValue({
       response: { status: 422, data: { message: "These credentials do not match our records." } },
     });
-    const alertSpy = vi.spyOn(globalThis, "alert").mockImplementation(() => {});
+    // happy-dom no longer defines window.alert, so stub it rather than spy on it.
+    const alertSpy = vi.fn();
+    vi.stubGlobal("alert", alertSpy);
 
     const { wrapper, push } = mountView(LoginView, { store });
     await fillAndSubmit(wrapper);

@@ -3,38 +3,38 @@ import session from "@/lib/session";
 
 /**
  * Routes are lazily imported so the login screen does not ship the capsule list
- * and vice versa — each view becomes its own chunk.
+ * and vice versa: each view becomes its own chunk.
  */
 export const routes = [
   { path: "/", redirect: { name: "capsules" } },
   {
     path: "/login",
     name: "login",
-    component: () => import(/* webpackChunkName: "auth" */ "@/views/LoginView.vue"),
+    component: () => import("@/views/LoginView.vue"),
     meta: { guestOnly: true, title: "Log in" },
   },
   {
     path: "/signup",
     name: "signup",
-    component: () => import(/* webpackChunkName: "auth" */ "@/views/SignupView.vue"),
+    component: () => import("@/views/SignupView.vue"),
     meta: { guestOnly: true, title: "Create an account" },
   },
   {
     path: "/message-list",
     name: "capsules",
-    component: () => import(/* webpackChunkName: "capsules" */ "@/views/MessageListView.vue"),
+    component: () => import("@/views/MessageListView.vue"),
     meta: { requiresAuth: true, title: "Your capsules" },
   },
   {
     path: "/add-message",
     name: "add-capsule",
-    component: () => import(/* webpackChunkName: "capsules" */ "@/views/AddMessageView.vue"),
+    component: () => import("@/views/AddMessageView.vue"),
     meta: { requiresAuth: true, title: "New capsule" },
   },
   {
     path: "/:pathMatch(.*)*",
     name: "not-found",
-    component: () => import(/* webpackChunkName: "auth" */ "@/views/NotFoundView.vue"),
+    component: () => import("@/views/NotFoundView.vue"),
     meta: { title: "Not found" },
   },
 ];
@@ -60,7 +60,7 @@ export function authGuard(to, auth = session) {
 }
 
 const router = createRouter({
-  history: createWebHistory(process.env.BASE_URL),
+  history: createWebHistory(import.meta.env.BASE_URL),
   routes,
   scrollBehavior: () => ({ top: 0 }),
 });

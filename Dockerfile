@@ -3,7 +3,7 @@
 ###############################################################################
 # 1. Dependencies — cached independently of the source tree.
 ###############################################################################
-FROM node:20-alpine AS deps
+FROM node:22-alpine AS deps
 
 WORKDIR /app
 COPY package.json package-lock.json ./
@@ -12,19 +12,18 @@ RUN npm ci --no-audit --no-fund
 ###############################################################################
 # 2. Build — produces the static bundle in /app/dist.
 #
-# `VUE_APP_*` values are inlined by webpack at build time, so the API URL is a
-# build argument rather than a runtime environment variable.
+# `VITE_*` values are inlined by Vite at build time, so the API URL is a build
+# argument rather than a runtime environment variable.
 ###############################################################################
-FROM node:20-alpine AS build
+FROM node:22-alpine AS build
 
-ARG VUE_APP_API_BASE_URL=http://localhost/api/v1/
-ARG VUE_APP_DEMO=false
-ARG VUE_APP_PAGE_SIZE=8
+ARG VITE_API_BASE_URL=http://localhost/api/v1/
+ARG VITE_DEMO=false
+ARG VITE_PAGE_SIZE=8
 
-ENV VUE_APP_API_BASE_URL=$VUE_APP_API_BASE_URL \
-    VUE_APP_DEMO=$VUE_APP_DEMO \
-    VUE_APP_PAGE_SIZE=$VUE_APP_PAGE_SIZE \
-    NODE_ENV=production
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL \
+    VITE_DEMO=$VITE_DEMO \
+    VITE_PAGE_SIZE=$VITE_PAGE_SIZE
 
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
