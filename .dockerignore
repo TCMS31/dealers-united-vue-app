@@ -1,0 +1,15 @@
+.git
+.github
+node_modules
+dist
+coverage
+docs
+project_venv
+*.log
+.env
+.env.local
+.env.*.local
+.DS_Store
+.idea
+.vscode
+README.md
