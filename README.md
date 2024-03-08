@@ -1,23 +1,63 @@
-# Time Capsule — Vue 3 client
+# Time Capsule — the Vue 3 client
 
-A small single-page app for writing a note to your future self. You pick a
-moment, the note is sealed, and until that moment passes the API only ever
-returns the first four characters of it — the rest never reaches the browser.
-This repository is the frontend; it talks to the Laravel API in
-[`dealers-united-backend`](https://github.com/Chsaleem31/dealers-united-backend)
-(Fortify for auth, Sanctum tokens for everything else).
+Write a note to your future self, pick the moment it may be read, and the note
+stays sealed until then. Sealing is enforced on the server: until the opening
+time passes the API returns only the first four characters of the note, so the
+rest never reaches the browser at all.
 
-## Screenshots
+> **The directory name does not describe this project.** `package.json` has been
+> `time-capsule-app` since the first commit, and the companion API is a time
+> capsule API. Nothing here has anything to do with car dealers; read
+> `dealers-united-*` as the name of the exercise, not of the subject.
 
-Captured with Playwright at 1440×900 against the app running locally in demo
-mode (`npm run serve:demo`), which serves the fixture data in
-`src/api/demoFixtures.js` instead of calling the API.
+This repository is the frontend only — Vue 3, Vuex 4, Vue Router 4 and Tailwind
+on the Vue CLI 5 build. It talks to the Laravel API in the sibling
+`dealers-united-backend` repository (Fortify issues a Sanctum token, everything
+after that is a bearer header).
 
-| The capsule list — sealed, unlockable and opened side by side |
+## A capsule has three states
+
+```mermaid
+stateDiagram-v2
+    [*] --> Sealed: POST users/{id}/message-capsules
+    Sealed --> Unlockable: the shared clock passes scheduled_opening_time
+    Unlockable --> Opened: PUT .../open returns the full note
+    Sealed --> Sealed: PUT .../open is refused with 403
+    Opened --> [*]
+
+    note right of Sealed
+      The API sends the first four characters and asterisks
+      Every card shows a live countdown
+    end note
+
+    note right of Unlockable
+      A browser-side label only
+      The server decides again when the request arrives
+    end note
+```
+
+Only two of those states exist in the API's data: `is_opened` is a capsule's one
+mutable field. **Unlockable is a client-side reading of the clock** —
+`CapsuleCard` compares `scheduled_opening_time` against the shared ticker and
+enables the button, while the server checks again and answers `403` if the
+browser was optimistic. The disabled button is a courtesy; the 403 is the rule.
+
+The countdown is where the cost is. One capsule per card means one `setInterval`
+per card, so `composables/useNow.js` runs exactly one timer at module level and
+every card derives from it — a list of 500 capsules still costs one interval,
+and a unit test pins that by spying on `setInterval` across three subscribers.
+
+## What it looks like
+
+All five images were captured with Playwright at 1440x900 (the last at 390x844)
+against the app in demo mode, so the data is the fixture set in
+`src/api/demoFixtures.js` and the header carries a "Demo data" badge.
+
+| The list — sealed, unlockable and opened side by side |
 | --- |
 | ![Capsule list](docs/screenshots/02-capsule-list.png) |
 
-| A capsule just after it was opened |
+| The same list a click later. Sealed 5 -> 4, Opened 2 -> 3 |
 | --- |
 | ![An opened capsule](docs/screenshots/03-capsule-opened.png) |
 
@@ -29,297 +69,172 @@ mode (`npm run serve:demo`), which serves the fixture data in
 | --- | --- |
 | ![Login](docs/screenshots/01-login.png) | ![Mobile list](docs/screenshots/05-mobile-list.png) |
 
-## Architecture
+## Run it
 
-The app is layered, and the dependencies only ever point downwards: a view may
-use the store, the store uses the API client, and the API client uses a
-transport. Nothing below a layer knows what is above it, and no component
-imports axios or builds a URL.
-
-```mermaid
-flowchart TD
-  subgraph presentation["Presentation"]
-    Router["router/index.js<br/>lazy routes + auth guard"]
-    Views["views/<br/>LoginView, SignupView,<br/>MessageListView, AddMessageView"]
-    Components["components/<br/>CapsuleCard, AppHeader,<br/>ui/ primitives"]
-    Clock["composables/useNow.js<br/>one shared 1s ticker"]
-  end
-
-  subgraph state["State"]
-    Auth["store/modules/auth.js"]
-    Capsules["store/modules/capsules.js<br/>sorting + pagination"]
-    UI["store/modules/ui.js<br/>in-flight request counter"]
-  end
-
-  subgraph data["Data"]
-    Client["api/index.js<br/>createApiClient(transport)"]
-    Http["api/httpTransport.js<br/>axios + interceptors"]
-    Demo["api/demoTransport.js<br/>in-memory fixtures"]
-    Errors["api/ApiError.js<br/>one error shape"]
-  end
-
-  subgraph platform["Platform"]
-    Session["lib/session.js<br/>cookie access"]
-    DateTime["lib/datetime.js<br/>parsing + countdowns"]
-    Env["lib/env.js"]
-  end
-
-  Laravel[("Laravel API<br/>/api/v1")]
-
-  Router --> Views
-  Views --> Components
-  Components --> Clock
-  Views --> Auth
-  Views --> Capsules
-  Auth --> Client
-  Capsules --> Client
-  Auth --> UI
-  Capsules --> UI
-  Client --> Http
-  Client -. "VUE_APP_DEMO=true" .-> Demo
-  Http --> Errors
-  Demo --> Errors
-  Http --> Session
-  Router --> Session
-  Auth --> Session
-  Components --> DateTime
-  Capsules --> DateTime
-  Http --> Env
-  Client --> Env
-  Http --> Laravel
-```
-
-The pattern is a **container/presentational split with an injected data layer**.
-Views own form state and navigation; Vuex modules own everything that outlives a
-route change; the API client owns URLs and response shapes. `createAppStore()`
-and `createApiClient()` both take their dependencies as arguments, which is what
-lets the unit suite run the real actions against a fixture backend.
-
-## Sealing and opening a capsule
-
-```mermaid
-sequenceDiagram
-  autonumber
-  actor User
-  participant View as AddMessageView
-  participant Store as capsules module
-  participant Client as api client
-  participant API as Laravel API
-  participant List as MessageListView
-
-  User->>View: write a note, pick an opening time
-  View->>View: validate (non-empty, strictly future)
-  View->>Store: dispatch("capsules/create")
-  Store->>Client: createCapsule(userId, payload)
-  Note over View,Client: the local datetime is converted to an absolute<br/>UTC instant before it leaves the browser
-  Client->>API: POST /users/{id}/message-capsules
-  API-->>Client: 201 with the created capsule
-  Store->>Store: mask the note, add to the list
-  View->>List: router.push({ name: "capsules" })
-
-  List->>Store: dispatch("capsules/fetchAll")
-  Store->>Client: listCapsules(userId)
-  Client->>API: GET /users/{id}/message-capsules
-  API-->>Client: 200 { data: [ ...capsules, notes masked ] }
-  List->>List: one ticker updates every countdown each second
-
-  User->>List: click "Open capsule" once the countdown hits zero
-  List->>Store: dispatch("capsules/open", id)
-  Store->>Client: openCapsule(userId, id)
-  Client->>API: PUT /users/{id}/message-capsules/{id}/open
-  alt the opening time has passed
-    API-->>Client: 200 with the full note
-    Store->>List: replace the capsule in place, note revealed
-  else still sealed
-    API-->>Client: 403 "cannot be opened - time remaining"
-    Store->>List: show the message, leave the list intact
-  end
-```
-
-## Quickstart
-
-The fastest way to see the app is demo mode, which needs no backend:
+Demo mode needs no backend at all — an in-memory transport stands in for HTTP,
+including the masking rule and the 403:
 
 ```bash
 npm install
-npm run serve:demo     # http://localhost:8080 — in-memory fixture data
+npm run serve:demo     # http://localhost:8080
 ```
 
-Sign in with any email and password; demo mode accepts anything non-empty.
-
-Against the real API:
+Any non-empty email and password will sign you in there. Against the real API:
 
 ```bash
-cp .env.example .env   # then point VUE_APP_API_BASE_URL at your backend
+cp .env.example .env   # point VUE_APP_API_BASE_URL at your backend
 npm install
 npm run serve
 ```
 
-## Configuration
+## Where each rule lives
 
-All configuration is build-time: Vue CLI inlines `VUE_APP_*` variables into the
-bundle, so changing one means rebuilding, not restarting.
+Dependencies point one way: a view uses the store, the store uses the API
+client, the client uses a transport. No component imports axios and no component
+builds a URL.
 
-| Variable | Required | Default | Purpose |
-| --- | --- | --- | --- |
-| `VUE_APP_API_BASE_URL` | no | `http://localhost/api/v1/` | Base URL of the Laravel API, including the `v1` prefix. A trailing slash is added if you omit one. |
-| `VUE_APP_DEMO` | no | `false` | When true, the in-memory fixture transport replaces HTTP. No request leaves the browser. |
-| `VUE_APP_PAGE_SIZE` | no | `8` | Capsules rendered per page in the list view. |
-| `WEB_PORT` | no | `8640` | Host port published by `docker-compose.yml`. Compose only. |
+```
+src/
+├── api/            the only code that knows a URL or a response shape
+│   ├── index.js          createApiClient(transport)
+│   ├── httpTransport.js  axios, bearer-token and error interceptors
+│   ├── demoTransport.js  a second implementation of the same interface
+│   └── ApiError.js       the one error shape the UI renders
+├── store/modules/  auth (profile, sign-in, rehydration), capsules
+│                   (list, sorting, paging, create, open), ui (in-flight count)
+├── lib/            datetime.js, session.js (the only file that touches
+│                   cookies), env.js
+├── composables/    useNow.js — the single 1 Hz clock
+├── components/     CapsuleCard, AppHeader, pagination, skeletons, ui/ primitives
+├── views/          Login, Signup, MessageList, AddMessage, NotFound
+└── router/         lazy routes plus the auth guard
+```
 
-### API endpoints used
+`createApiClient()` and `createAppStore()` both take their dependencies as
+arguments, which is what lets the unit suite run the real Vuex actions against
+the fixture transport instead of a pile of mocks. That same seam is what demo
+mode and the screenshots above are built on.
+
+Routes are lazy, so signing in loads `chunk-vendors` (165.00 KiB) plus `app`
+(16.97 KiB) and `auth` (14.91 KiB), and leaves the `capsules` chunk (19.61 KiB)
+on the server until it is needed. Production source maps are off; a full `dist/`
+is 260 KB.
+
+## The API it speaks to
 
 | Method | Path | Used by |
 | --- | --- | --- |
 | `POST` | `/api/v1/register` | `auth/signup` — returns `{ user, token }` |
 | `POST` | `/api/v1/login` | `auth/login` — returns `{ user, token }` |
 | `GET` | `/api/v1/user` | `auth/hydrate`, after a full page reload |
-| `GET` | `/api/v1/users/{id}/message-capsules` | `capsules/fetchAll` — returns `{ data: [...] }` |
+| `GET` | `/api/v1/users/{id}/message-capsules` | `capsules/fetchAll` |
 | `POST` | `/api/v1/users/{id}/message-capsules` | `capsules/create` |
 | `PUT` | `/api/v1/users/{id}/message-capsules/{capsuleId}/open` | `capsules/open` |
 
-## Development
+Errors are always `{"message": "..."}`, with `errors` added on a 422. `401` means
+the token is missing or invalid — the boot-time profile fetch treats that as a
+stale cookie and clears the session rather than leaving the app half signed in.
+`403` means authenticated but not allowed, which is how "too early" arrives.
+`normaliseError()` turns all of it — including a rejection with no response at
+all, such as an offline browser — into a single `ApiError` carrying `status`, a
+displayable `message` and `fieldErrors`. Views render `error.message` in a banner
+and `error.fieldErrors[name]` under the matching input; nothing reaches into
+`error.response.data`.
+
+The listing endpoint returns every capsule the user owns in one response. The
+store therefore pages in the browser, so the DOM holds `VUE_APP_PAGE_SIZE` cards
+however large the response grows. That bounds rendering, not transfer.
+
+## Two places this client and that API disagree
+
+Both are real, both are in the code today, and the backend's README describes
+them from its side.
+
+1. **`createCapsule` does not unwrap `data`.** `POST` returns a
+   `MessageCapsuleResource`, so the created capsule arrives wrapped in `data`.
+   `listCapsules` and `openCapsule` both unwrap it; `createCapsule` returns the
+   body as-is, so `capsules/create` commits an object with no `id` and the
+   `upsert` mutation early-returns. It is invisible in practice — the form
+   navigates to the list, which refetches — and invisible in demo mode, whose
+   transport returns the bare model. Against the real API the optimistic insert
+   simply does nothing.
+2. **The comments describe an older response shape.** `src/lib/datetime.js` is
+   written around a naive `"2024-03-01 12:00:00"` assumed to be UTC, and
+   `store/modules/capsules.js` re-masks the note after a create because "the
+   create endpoint returns the raw model". The API now sends ISO-8601 with an
+   explicit `Z` and masks in the resource for every endpoint. `parseServerDate`
+   handles both forms, so the two agree on the instant — the prose is what is
+   stale.
+
+## Time is the hard part of this app
+
+Every rule about time lives in `src/lib/datetime.js` and is unit-tested there.
+
+- A `datetime-local` input is a wall-clock reading in the browser's timezone with
+  no offset. It is converted to an absolute ISO instant before it is sent, so a
+  capsule set for 9am local unlocks at 9am local rather than at 9am UTC.
+- `parseServerDate` normalises a naive server string to `...Z` instead of handing
+  it to `new Date()`, which is unspecified for that format and has historically
+  returned `Invalid Date` in Safari. ISO strings with an offset pass straight
+  through.
+- Countdowns break out days, so a capsule a month away reads `34d 04:59:56` and
+  not `820:59:56`.
+
+## Build-time settings
+
+Vue CLI inlines `VUE_APP_*` at compile time, so changing one means rebuilding,
+not restarting. That is also why the Docker image takes the API URL as a build
+argument rather than an environment variable.
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `VUE_APP_API_BASE_URL` | `http://localhost/api/v1/` | Base URL including the `v1` prefix. A trailing slash is added if you omit one. |
+| `VUE_APP_DEMO` | `false` | Replace HTTP with the in-memory fixture transport. No request leaves the browser. |
+| `VUE_APP_PAGE_SIZE` | `8` | Capsules rendered per page. |
+| `WEB_PORT` | `8640` | Host port published by `docker-compose.yml`. Compose only. |
+
+## Checks
 
 ```bash
-npm run serve          # dev server against the configured API
-npm run serve:demo     # dev server with fixture data, no backend needed
+npm test               # vitest run
+npm run test:coverage  # V8 coverage
+npm run lint:check     # ESLint (vue3-recommended + prettier), no --fix
+npm run format:check   # Prettier
 npm run build          # production bundle into dist/
-npm test               # Vitest, 123 unit tests
-npm run test:watch     # the same suite in watch mode
-npm run test:coverage  # V8 coverage report
-npm run lint           # ESLint (vue3-recommended), auto-fixing
-npm run lint:check     # ESLint without --fix, for CI
-npm run format         # Prettier
 ```
 
-No test touches the network: `tests/setup.js` replaces `fetch` and
-`XMLHttpRequest` with stubs that throw, and the store tests run against the same
-in-memory transport demo mode uses.
+`npm test` is 18 files, 123 tests. No test touches the network: `tests/setup.js`
+replaces `fetch` and `XMLHttpRequest` with stubs that throw, and the store and
+view specs run against the same in-memory transport demo mode uses.
 
-### Docker
-
-```bash
-docker compose build
-docker compose up -d   # http://localhost:8640
-```
-
-Multi-stage build (deps → webpack build → nginx), runs as the unprivileged
-`nginx` user on port 8080 with a read-only root filesystem and a `/healthz`
-healthcheck. Because `VUE_APP_*` is compile-time, the API URL is a **build
-argument**:
+A multi-stage `Dockerfile` (deps -> webpack build -> nginx, unprivileged, with a
+`/healthz` check) and a `docker-compose.yml` are committed, and
+`docker compose config` parses. **The image has not been built or booted here** —
+no Docker daemon was available — so treat it as unproven. The API URL goes in at
+build time:
 
 ```bash
 docker compose build --build-arg VUE_APP_API_BASE_URL=https://api.example.com/api/v1/
 ```
 
-> The Docker image has not been built or booted in this working copy — the
-> Docker daemon was unavailable. `docker compose config` parses cleanly.
+## What it does not do
 
-## Project structure
-
-```
-src/
-├── api/                    Data layer — the only place that knows about URLs
-│   ├── index.js            createApiClient(transport) + the configured client
-│   ├── httpTransport.js    axios instance, bearer-token and error interceptors
-│   ├── demoTransport.js    in-memory implementation of the same interface
-│   ├── demoFixtures.js     seed capsules, positioned relative to "now"
-│   └── ApiError.js         the single error shape the UI renders
-├── store/
-│   ├── index.js            createAppStore({ api }) — dependencies injected
-│   └── modules/
-│       ├── auth.js         profile, sign-in/out, rehydration
-│       ├── capsules.js     capsule list, sorting, pagination, open/create
-│       └── ui.js           pending-request counter behind the global loader
-├── lib/
-│   ├── datetime.js         server-date parsing, countdowns, local↔UTC
-│   ├── session.js          the only module that touches cookies
-│   └── env.js              build-time configuration, normalised
-├── composables/
-│   └── useNow.js           one 1-second ticker shared by every countdown
-├── components/
-│   ├── CapsuleCard.vue     a capsule in its sealed / unlocked / opened states
-│   ├── AppHeader.vue       CapsuleCardSkeleton.vue, PaginationControls.vue, …
-│   └── ui/                 AppButton, FormField, AlertBanner, StatePanel
-├── views/                  LoginView, SignupView, MessageListView,
-│                           AddMessageView, NotFoundView
-└── router/index.js         lazy routes + the auth guard
-
-docker/nginx.conf           SPA history fallback, caching, non-root paths
-tests/                      Vitest suite, mirrors src/
-docs/screenshots/           the images above
-```
-
-## Design notes
-
-**One transport interface is the extension seam.** `createApiClient(transport)`
-takes anything shaped `{ get, post, put }`. The production transport is axios;
-`demoTransport.js` is a complete second implementation, including the backend's
-note-masking rule and its 403 for opening a sealed capsule. That one seam pays
-for itself three times: demo mode runs the app with no backend, the screenshots
-above are of the real UI with realistic data, and the store tests exercise the
-actual actions rather than a pile of `vi.mock` calls.
-
-**Errors have exactly one shape.** Every transport rejects with an `ApiError`
-carrying `status`, a human message and `fieldErrors`. Views render
-`error.message` in a banner and `error.fieldErrors[name]` under the relevant
-input. Nothing reaches into `error.response.data`, so a request that fails
-before a response exists is just another error rather than a `TypeError` on top
-of one.
-
-**Scalability, honestly.** This is a small client; the real costs are the bundle
-and the render loop.
-
-- *Deployed bytes.* The old build shipped source maps to production: `dist/` was
-  1,284 KB, of which a single `chunk-vendors.js.map` was 1,053,824 bytes.
-  Turning `productionSourceMap` off took `dist/` to **260 KB, an 80% cut**, and
-  the largest remaining file is the 165 KB vendor chunk.
-- *What the first paint downloads.* Routes are lazy, so the sign-in path loads
-  `chunk-vendors` (165.00 KiB) + `app` (16.97 KiB) + `auth` (14.91 KiB) and
-  leaves the `capsules` chunk (19.61 KiB) on the server until the user is signed
-  in. Previously every view was in one `app.js`.
-- *Timers.* Each card needs a live countdown. Per-card `setInterval` means N
-  timers and N cleanup paths; `useNow()` runs exactly one interval and every card
-  derives from it, which a test asserts by spying on `setInterval` across three
-  mounted components.
-- *Unbounded list.* `GET /users/{id}/message-capsules` returns every capsule the
-  user owns with no server-side paging, and the frontend cannot change that. The
-  store therefore renders one page at a time, so the DOM stays at `PAGE_SIZE`
-  cards however large the response grows.
-
-**Time is the hard part of this app.** Three separate bugs lived here, so the
-rules are now explicit and tested: the API's naive `"2024-03-01 12:00:00"` is
-read as UTC (Laravel's default `APP_TIMEZONE`) rather than handed to `new Date()`
-where Safari has historically returned `Invalid Date`; a `datetime-local` value
-is converted to an absolute ISO instant before it is sent; and countdowns longer
-than a day are rendered as `34d 04:59:55` rather than `820:59:55`.
-
-**The session lives in one module.** `lib/session.js` is the only file that
-mentions cookies, and it is what the HTTP interceptor, the router guard and the
-auth store all read. Moving to `localStorage` or to a memory store would be a
-one-file change.
-
-## Limitations
-
-- **Auth is a bearer token in a cookie.** That is the contract the backend
-  offers — Fortify's login response returns a Sanctum plain-text token — but the
-  cookie is readable by JavaScript and so is exposed to XSS. An httpOnly cookie
-  or a short-lived token with a refresh flow would be the real fix, and both
-  require backend changes.
-- **No `GET /users/{id}/message-capsules/{id}` use, and no edit or delete.** The
-  backend exposes `index`, `show`, `store` and `open` only; there is deliberately
-  no UI for anything it cannot do.
-- **Pagination is client-side.** It bounds rendering, not transfer. A user with
-  ten thousand capsules still downloads all of them in one response.
-- **Configuration is compile-time.** A different `VUE_APP_API_BASE_URL` needs a
-  rebuild. Runtime configuration would mean fetching a config file on boot.
-- **The demo transport ships in the production bundle** — measured at 3.30 KiB
-  raw / 1.20 KiB gzipped by building `app.js` with it (16.97 KiB / 6.70 KiB)
-  and without it (13.67 KiB / 5.50 KiB). That is the price of
-  `npm run serve:demo` working from a clean checkout, and it was judged worth
-  paying.
-- **No end-to-end tests.** The suite is unit and component level; the Playwright
-  run that produced the screenshots is a capture script, not an assertion suite.
-- **The Docker image is unbuilt here.** Only `docker compose config` was run.
-- **No offline support, no i18n, no dark theme.** Dates are rendered with the
-  browser's locale; everything else is English.
+- **The bearer token sits in a JavaScript-readable cookie.** That is the shape
+  Fortify's login response offers and the interceptor has to read it from
+  somewhere. An httpOnly cookie or a refresh flow would fix it and both need
+  backend changes.
+- **No edit, no delete, no single-capsule view.** The API exposes `index`,
+  `show`, `store` and `open`, and there is deliberately no UI for anything it
+  cannot do.
+- **Paging is client-side.** The API has since grown an opt-in `?per_page=`; this
+  client does not send it, so a user with ten thousand capsules still downloads
+  all of them.
+- **Nothing announces an unlock.** There is no polling and no socket — a sealed
+  capsule becomes unlockable on screen because the countdown reaches zero, but
+  the list itself is fetched when the view is created and then only by the retry
+  button.
+- **The demo transport ships in the production bundle.** That is the price of
+  `npm run serve:demo` working from a clean checkout.
+- **No end-to-end tests, no offline support, no i18n, no dark theme.** The suite
+  is unit and component level; the Playwright run that produced the screenshots
+  asserts nothing. Dates use the browser's locale, the rest is English.
